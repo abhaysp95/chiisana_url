@@ -20,8 +20,6 @@ func main() {
 	app := fiber.New()
 	setupRoutes(app)
 
-	log.Fatal(app.Listen(":8080"))
-
 	// loading up .env
 	err := godotenv.Load()
 	if err != nil {
@@ -29,4 +27,6 @@ func main() {
 	}
 
 	fmt.Printf("key: MY_SECRET_KEY, value: %v\n", os.Getenv("MY_SECRET_KEY"));
+
+	log.Fatal(app.Listen(":8080"))
 }
