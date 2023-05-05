@@ -23,7 +23,7 @@ func ResolveURL(ctx *fiber.Ctx) error {
 	rIncrdb := database.CreateClient(1)
 	defer rIncrdb.Close()
 
-	rIncrdb.Incr(database.Ctx, "counter")
+	rIncrdb.Incr(database.Ctx, ctx.IP())
 
 	return ctx.Redirect(value, 301)
 }
