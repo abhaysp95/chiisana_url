@@ -1,8 +1,13 @@
 package main
 
 import (
+	"fmt"
+	"log"
+	"os"
+
 	"github.com/abhaysp95/chiisana_url/api/routes"
 	"github.com/gofiber/fiber/v2"
+	"github.com/joho/godotenv"
 )
 
 func setupRoutes(app *fiber.App) {
@@ -11,5 +16,17 @@ func setupRoutes(app *fiber.App) {
 }
 
 func main() {
+	// setting up router
+	app := fiber.New()
+	setupRoutes(app)
 
+	log.Fatal(app.Listen(":8080"))
+
+	// loading up .env
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	fmt.Printf("key: MY_SECRET_KEY, value: %v\n", os.Getenv("MY_SECRET_KEY"));
 }
