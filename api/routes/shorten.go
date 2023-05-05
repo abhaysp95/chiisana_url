@@ -44,7 +44,7 @@ func ShortenURL(ctx *fiber.Ctx) error {
 	if err == redis.Nil {
 		_ = rIpdb.Set(database.Ctx, ctx.IP(), os.Getenv("API_QUOTA"), time.Minute*30)
 	} else if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(map[string]string{"error": "Problem with database"})
+		return ctx.Status(fiber.StatusInternalServerError).JSON(map[string]string{"error": "Problem getting IP rate from database"})
 	} else {
 		valInt, err := strconv.Atoi(ipVal)
 		if err != nil {
@@ -85,8 +85,12 @@ func ShortenURL(ctx *fiber.Ctx) error {
 	_, err = rdb.Get(database.Ctx, id).Result()
 	if err == redis.Nil {
 		// store the new url
+		err = rdb.Set(database.Ctx, id, body.URL, body.Expiry*time.Second*3600).Err()
+		if err != nil {
+			return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Problem in storing URL to db"})
+		}
 	} else if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Problem with database"})
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Problem  getting id from database"})
 	} else { // can't use this custom short url
 		return ctx.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "Provided custom short URL is already in use"})
 	}
@@ -95,12 +99,32 @@ func ShortenURL(ctx *fiber.Ctx) error {
 		body.Expiry = 24 // set default expiry
 	}
 
-	err = rdb.Set(database.Ctx, id, body.URL, body.Expiry*time.Second*3600).Err()
-	if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Problem in storing URL to db"})
-	}
-
 	rIpdb.Decr(database.Ctx, ctx.IP()) // one more url shortend for "this" ip
 
-	return nil
+	// get remaining rate for the requesting IP
+	remaining_rate, err := rIpdb.Get(database.Ctx, ctx.IP()).Result()
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Problem getting remaining rate"})
+	}
+
+	// get TTL for the url being returned (cooling period)
+	rate_ttl, err := rdb.TTL(database.Ctx, ctx.IP()).Result()
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Problem getting cooling period"})
+	}
+
+	rate_left, err := strconv.Atoi(remaining_rate)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Rate parsing error"})
+	}
+
+	resp := response {
+		URL: body.URL,
+		ShortAs: id,
+		Expiry: body.Expiry,
+		XRateRemaining: uint(rate_left),
+		XRateLimitRest: rate_ttl / (time.Nanosecond * time.Minute),
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(resp)
 }
