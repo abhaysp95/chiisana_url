@@ -1,7 +1,29 @@
 package routes
 
-import "github.com/gofiber/fiber/v2"
+import (
+	"github.com/abhaysp95/chiisana_url/api/database"
+	"github.com/gofiber/fiber/v2"
+	"github.com/redis/go-redis/v9"
+)
 
 func ResolveURL(ctx *fiber.Ctx) error {
-	return nil
+	shortURL := ctx.Params("url")
+
+	rdb := database.CreateClient(0)
+	defer rdb.Close()
+
+	value, err := rdb.Get(database.Ctx, shortURL).Result()
+	if err == redis.Nil {
+		return ctx.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "Provided short url not found"})
+		// log.Println("couldn't found actual url for \"", shortURL, "\"")
+	} else if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Problem with database"})
+	}
+
+	rIncrdb := database.CreateClient(1)
+	defer rIncrdb.Close()
+
+	rIncrdb.Incr(database.Ctx, "counter")
+
+	return ctx.Redirect(value, 301)
 }
