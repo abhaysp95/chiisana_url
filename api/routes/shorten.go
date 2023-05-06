@@ -2,13 +2,14 @@ package routes
 
 import (
 	"fmt"
+	"log"
 	"net/url"
 	"os"
 	"strconv"
 	"time"
 
-	"github.com/abhaysp95/chiisana_url/api/database"
-	"github.com/abhaysp95/chiisana_url/api/helpers"
+	"github.com/abhaysp95/chiisana_url/database"
+	"github.com/abhaysp95/chiisana_url/helpers"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
@@ -30,6 +31,7 @@ type response struct {
 
 func ShortenURL(ctx *fiber.Ctx) error {
 	body := &request{}
+	log.Printf("body: %v", body)
 
 	// parse the request body
 	if err := ctx.BodyParser(body); err != nil {
@@ -60,7 +62,7 @@ func ShortenURL(ctx *fiber.Ctx) error {
 	}
 
 	// check for request passed for URL shortening contains actual URL
-	if _, err := url.ParseRequestURI(body.URL); err != nil {
+	if _, err := url.Parse(body.URL); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid URL passed"})
 	}
 

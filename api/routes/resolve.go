@@ -3,7 +3,7 @@ package routes
 import (
 	"fmt"
 
-	"github.com/abhaysp95/chiisana_url/api/database"
+	"github.com/abhaysp95/chiisana_url/database"
 	"github.com/gofiber/fiber/v2"
 	"github.com/redis/go-redis/v9"
 )

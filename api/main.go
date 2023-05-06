@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/abhaysp95/chiisana_url/api/routes"
+	"github.com/abhaysp95/chiisana_url/routes"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/joho/godotenv"
