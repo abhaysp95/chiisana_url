@@ -44,7 +44,7 @@ func ShortenURL(ctx *fiber.Ctx) error {
 	if err == redis.Nil {
 		_ = rIpdb.Set(database.Ctx, ctx.IP(), os.Getenv("API_QUOTA"), time.Minute*30)
 	} else if err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(map[string]string{"error": "Problem getting IP rate from database"})
+		return ctx.Status(fiber.StatusInternalServerError).JSON(map[string]string{"error": fmt.Sprintf("Problem getting IP rate from database: %v", err)})
 	} else {
 		valInt, err := strconv.Atoi(ipVal)
 		if err != nil {
